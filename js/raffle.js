@@ -14,7 +14,6 @@
 
   // ── DOM refs ────────────────────────────────────────────────
   const btnTry         = document.getElementById("btn-try");
-  const btnTryAgain    = document.getElementById("btn-try-again");
   const initialView    = document.getElementById("initial-view");
   const resultWin      = document.getElementById("result-win");
   const resultLose     = document.getElementById("result-lose");
@@ -66,12 +65,6 @@
     }
   });
 
-  // ── Tentar de novo ──────────────────────────────────────────
-  btnTryAgain?.addEventListener("click", () => {
-    showView(initialView);
-    checkCooldown();
-  });
-
   // ── Processar resultado ──────────────────────────────────────
   function handleDrawResult(data) {
     switch (data.status) {
@@ -90,7 +83,6 @@
         showView(resultLose);
         document.getElementById("lose-msg").textContent =
           "Todos os brindes já foram distribuídos. Obrigado por participar!";
-        if (btnTryAgain) btnTryAgain.style.display = "none";
         break;
 
       case "not_started":

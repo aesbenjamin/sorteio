@@ -38,10 +38,6 @@
             <div class="spinner"></div>
             <span class="btn-label">✨ Tentar a sorte</span>
           </button>
-
-          <div id="prizes-info" style="text-align:center;margin-top:1rem;font-size:.85rem;color:var(--neutral-400);display:none">
-            <!-- Ex: "42 brindes disponíveis até 18h" -->
-          </div>
         </div>
 
         <!-- ── Resultado: GANHOU ────────────────────────────── -->
@@ -68,18 +64,12 @@
           <div class="result result-lose visible">
             <div class="result-icon">🍀</div>
             <div>
-              <div class="result-title">Quase lá!</div>
+              <div class="result-title">Não foi dessa vez!</div>
               <p class="result-msg" id="lose-msg">
-                Não foi dessa vez. Você pode tentar novamente!
+                Você participou e está concorrendo ao prêmio final!
               </p>
             </div>
           </div>
-
-          <hr class="divider" />
-
-          <button class="btn btn-secondary" id="btn-try-again">
-            🔄 Tentar novamente
-          </button>
         </div>
 
         <!-- ── Erro / fora do período ───────────────────────── -->
@@ -128,21 +118,10 @@
       document.getElementById("event-name").textContent = cfg.event_name;
       document.title = cfg.event_name;
 
-      const badge = document.getElementById("event-status-badge");
-      const info  = document.getElementById("prizes-info");
       const btnEl = document.getElementById("btn-try");
-      badge.style.display = "";
 
-      if (now < start) {
-        badge.innerHTML = `<span class="badge badge-warning">⏳ Começa em ${formatDate(start)}</span>`;
+      if (now < start || now > end) {
         btnEl.disabled = true;
-      } else if (now > end) {
-        badge.innerHTML = `<span class="badge badge-neutral">🔒 Encerrado</span>`;
-        btnEl.disabled = true;
-      } else {
-        badge.innerHTML = `<span class="badge badge-success">🟢 Sorteio ativo</span>`;
-        info.textContent = `${cfg.prizes_remaining} brinde${cfg.prizes_remaining !== 1 ? "s" : ""} disponível${cfg.prizes_remaining !== 1 ? "is" : ""} · encerra ${formatDate(end)}`;
-        info.style.display = "";
       }
     })();
 
