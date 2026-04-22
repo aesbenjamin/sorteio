@@ -82,19 +82,16 @@ Deno.serve(async (req: Request) => {
       return json({ status: "no_prizes", message: "Todos os brindes já foram sorteados!" });
     }
 
-    // 8. Registra o ganhador (nome/contato vêm em chamada separada após preenchimento do form)
-    const { data: draw, error: drawError } = await supabase
+    // 8. Registra o sorteio (apenas timestamp, sem dados pessoais)
+    const { error: drawError } = await supabase
       .from("draws")
-      .insert({ config_id: config.id })
-      .select("id")
-      .single();
+      .insert({ config_id: config.id });
 
     if (drawError) throw drawError;
 
     return json({
       status: "win",
       message: "Parabéns! Você foi sorteado!",
-      draw_id: draw.id,
     });
 
   } catch (err) {

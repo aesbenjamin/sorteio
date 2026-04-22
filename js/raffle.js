@@ -4,23 +4,29 @@
 (function () {
   "use strict";
 
-  // ── DOM refs ────────────────────────────────────────────────
-  const btnTry       = document.getElementById("btn-try");
-  const btnTryAgain  = document.getElementById("btn-try-again");
-  const btnSubmit    = document.getElementById("btn-submit");
-  const initialView  = document.getElementById("initial-view");
-  const resultWin    = document.getElementById("result-win");
-  const resultLose   = document.getElementById("result-lose");
-  const resultError  = document.getElementById("result-error");
-  const winnerForm   = document.getElementById("winner-form");
-  const formSuccess  = document.getElementById("form-success");
-  const errorMsg     = document.getElementById("error-msg");
-  const confettiCanvas = document.getElementById("confetti-canvas");
+  const COOLDOWN_KEY = "sorteador_cooldown";
 
-  let currentDrawId = null;
+  // ── DOM refs ────────────────────────────────────────────────
+  const btnTry          = document.getElementById("btn-try");
+  const btnTryAgain     = document.getElementById("btn-try-again");
+  const initialView     = document.getElementById("initial-view");
+  const resultWin       = document.getElementById("result-win");
+  const resultLose      = document.getElementById("result-lose");
+  const resultError     = document.getElementById("result-error");
+  const errorMsg        = document.getElementById("error-msg");
+  const cooldownNotice  = document.getElementById("cooldown-notice");
+  const cooldownMsgEl   = document.getElementById("cooldown-msg");
+  const confettiCanvas  = document.getElementById("confetti-canvas");
+
+  let cooldownTimer = null;
+
+  // ── Verifica cooldown ao carregar ───────────────────────────
+  checkCooldown();
 
   // ── Tentar o sorteio ────────────────────────────────────────
   btnTry?.addEventListener("click", async () => {
+    if (isOnCooldown()) return;
+
     setLoading(btnTry, true);
 
     try {
@@ -34,6 +40,12 @@
       });
 
       const data = await res.json();
+
+      // Grava cooldown após qualquer tentativa válida (ganhou ou não)
+      if (["win", "no_win", "no_prizes"].includes(data.status)) {
+        setCooldown();
+      }
+
       handleDrawResult(data);
     } catch {
       showView(resultError);
@@ -45,56 +57,14 @@
 
   // ── Tentar de novo ──────────────────────────────────────────
   btnTryAgain?.addEventListener("click", () => {
-    currentDrawId = null;
     showView(initialView);
+    checkCooldown();
   });
 
-  // ── Submeter formulário do ganhador ─────────────────────────
-  btnSubmit?.addEventListener("click", async () => {
-    const name    = document.getElementById("winner-name").value.trim();
-    const contact = document.getElementById("winner-contact").value.trim();
-
-    if (!name) {
-      document.getElementById("winner-name").focus();
-      return;
-    }
-
-    setLoading(btnSubmit, true);
-
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/register-winner`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          draw_id: currentDrawId,
-          winner_name: name,
-          winner_contact: contact || null,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.status === "ok") {
-        winnerForm.style.display = "none";
-        formSuccess.style.display = "block";
-      } else {
-        alert("Erro ao salvar seus dados. Por favor, avise o responsável pelo evento.");
-      }
-    } catch {
-      alert("Erro de conexão. Por favor, avise o responsável pelo evento.");
-    } finally {
-      setLoading(btnSubmit, false);
-    }
-  });
-
-  // ── Processar resultado do sorteio ──────────────────────────
+  // ── Processar resultado ──────────────────────────────────────
   function handleDrawResult(data) {
     switch (data.status) {
       case "win":
-        currentDrawId = data.draw_id;
         showView(resultWin);
         launchConfetti();
         break;
@@ -102,14 +72,14 @@
       case "no_win":
         showView(resultLose);
         document.getElementById("lose-msg").textContent =
-          "Não foi dessa vez! Você pode tentar novamente.";
+          "Não foi dessa vez! Tente novamente mais tarde.";
         break;
 
       case "no_prizes":
         showView(resultLose);
         document.getElementById("lose-msg").textContent =
           "Todos os brindes já foram distribuídos. Obrigado por participar!";
-        btnTryAgain.style.display = "none";
+        if (btnTryAgain) btnTryAgain.style.display = "none";
         break;
 
       case "not_started":
@@ -133,6 +103,57 @@
     }
   }
 
+  // ── Cooldown ─────────────────────────────────────────────────
+  function setCooldown() {
+    try { localStorage.setItem(COOLDOWN_KEY, Date.now().toString()); } catch { /* privado */ }
+  }
+
+  function isOnCooldown() {
+    try {
+      const ts = parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
+      return Date.now() - ts < COOLDOWN_MINUTES * 60_000;
+    } catch { return false; }
+  }
+
+  function getRemainingMs() {
+    try {
+      const ts = parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
+      return Math.max(0, COOLDOWN_MINUTES * 60_000 - (Date.now() - ts));
+    } catch { return 0; }
+  }
+
+  function checkCooldown() {
+    clearInterval(cooldownTimer);
+
+    if (!isOnCooldown()) {
+      if (cooldownNotice) cooldownNotice.style.display = "none";
+      if (btnTry) btnTry.disabled = false;
+      return;
+    }
+
+    updateCooldownDisplay();
+    cooldownTimer = setInterval(() => {
+      if (!isOnCooldown()) {
+        clearInterval(cooldownTimer);
+        if (cooldownNotice) cooldownNotice.style.display = "none";
+        if (btnTry) btnTry.disabled = false;
+      } else {
+        updateCooldownDisplay();
+      }
+    }, 10_000);
+  }
+
+  function updateCooldownDisplay() {
+    const remaining = getRemainingMs();
+    const mins = Math.ceil(remaining / 60_000);
+    if (cooldownMsgEl) {
+      cooldownMsgEl.textContent =
+        `Você já participou. Tente novamente em ${mins} minuto${mins !== 1 ? "s" : ""}.`;
+    }
+    if (cooldownNotice) cooldownNotice.style.display = "";
+    if (btnTry) btnTry.disabled = true;
+  }
+
   // ── Utilitários de UI ────────────────────────────────────────
   function showView(el) {
     [initialView, resultWin, resultLose, resultError].forEach(v => {
@@ -147,7 +168,7 @@
     btn.classList.toggle("spinning", loading);
   }
 
-  // ── Confetti simples (canvas) ────────────────────────────────
+  // ── Confetti ─────────────────────────────────────────────────
   function launchConfetti() {
     if (!confettiCanvas) return;
 
@@ -173,13 +194,8 @@
     const tick = () => {
       ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
       let alive = 0;
-
       for (const p of pieces) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += .07;
-        p.angle += p.spin;
-
+        p.x += p.vx; p.y += p.vy; p.vy += .07; p.angle += p.spin;
         if (p.y < confettiCanvas.height + 20) {
           alive++;
           ctx.save();
@@ -190,13 +206,8 @@
           ctx.restore();
         }
       }
-
-      if (alive > 0) {
-        frame = requestAnimationFrame(tick);
-      } else {
-        confettiCanvas.style.display = "none";
-        ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-      }
+      if (alive > 0) { frame = requestAnimationFrame(tick); }
+      else { confettiCanvas.style.display = "none"; ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height); }
     };
 
     frame = requestAnimationFrame(tick);

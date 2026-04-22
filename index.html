@@ -30,6 +30,10 @@
             <!-- badge dinâmico: ativo / não iniciado / encerrado -->
           </div>
 
+          <div id="cooldown-notice" class="alert alert-warning" style="display:none;margin-bottom:1rem">
+            ⏳ <span id="cooldown-msg"></span>
+          </div>
+
           <button class="btn btn-primary" id="btn-try">
             <div class="spinner"></div>
             <span class="btn-label">✨ Tentar a sorte</span>
@@ -47,36 +51,15 @@
             <div>
               <div class="result-title">Parabéns!</div>
               <p class="result-msg">
-                Você foi sorteado! Preencha seus dados abaixo para retirar o brinde
-                com o responsável do evento.
+                Você foi sorteado! Procure o responsável do evento e apresente esta tela para retirar seu brinde.
               </p>
             </div>
           </div>
 
           <hr class="divider" />
 
-          <!-- Formulário de retirada -->
-          <div id="winner-form">
-            <div class="form-group">
-              <label for="winner-name">Seu nome *</label>
-              <input type="text" id="winner-name" placeholder="Nome completo" autocomplete="name" />
-            </div>
-            <div class="form-group">
-              <label for="winner-contact">Contato (opcional)</label>
-              <input type="text" id="winner-contact" placeholder="E-mail ou telefone" autocomplete="email" />
-              <p class="form-hint">Para contato caso necessário.</p>
-            </div>
-            <button class="btn btn-success" id="btn-submit">
-              <div class="spinner"></div>
-              <span class="btn-label">✅ Confirmar retirada</span>
-            </button>
-          </div>
-
-          <!-- Confirmação após salvar -->
-          <div id="form-success" style="display:none">
-            <div class="alert alert-success">
-              🎊 Dados registrados! Apresente esta tela para o responsável e retire seu brinde.
-            </div>
+          <div class="alert alert-success">
+            🎊 Mostre esta tela para o responsável e retire seu brinde!
           </div>
         </div>
 

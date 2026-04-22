@@ -65,7 +65,7 @@
 
   // ── Inicializa o painel ───────────────────────────────────────
   async function init() {
-    await Promise.all([loadStats(), loadConfig(), loadWinners()]);
+    await Promise.all([loadStats(), loadConfig()]);
     setupConfigForm();
     setupRefresh();
   }
@@ -117,46 +117,6 @@
       }
     } catch (err) {
       console.error("Erro ao carregar stats:", err);
-    }
-  }
-
-  // ── Ganhadores ────────────────────────────────────────────────
-  async function loadWinners() {
-    const tbody = document.getElementById("winners-body");
-    const empty = document.getElementById("winners-empty");
-    if (!tbody) return;
-
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/draws?order=drawn_at.desc&limit=50`,
-        { headers: getHeaders() }
-      );
-      const rows = await res.json();
-
-      tbody.innerHTML = "";
-
-      if (!rows || rows.length === 0) {
-        if (empty) empty.style.display = "";
-        return;
-      }
-
-      if (empty) empty.style.display = "none";
-
-      for (const row of rows) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escHtml(row.winner_name || "<em style='color:var(--neutral-400)'>Aguardando</em>")}</td>
-          <td>${escHtml(row.winner_contact || "—")}</td>
-          <td>${formatDateStr(row.drawn_at)}</td>
-          <td>
-            ${row.winner_name
-              ? '<span class="badge badge-success">✅ Confirmado</span>'
-              : '<span class="badge badge-warning">⏳ Pendente</span>'}
-          </td>`;
-        tbody.appendChild(tr);
-      }
-    } catch (err) {
-      console.error("Erro ao carregar ganhadores:", err);
     }
   }
 
@@ -258,7 +218,6 @@
   function setupRefresh() {
     setInterval(() => {
       loadStats();
-      loadWinners();
     }, 30_000);
   }
 
