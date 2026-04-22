@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Sorteio de Brindes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── Login overlay ──────────────────────────────────────── -->
+  <div id="login-overlay">
+    <div class="container">
+      <div class="card">
+        <div class="card-header">
+          <span class="icon">🔐</span>
+          <h1>Acesso Administrativo</h1>
+          <p>Insira a Service Role Key do seu projeto Supabase.</p>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="service-key">Service Role Key</label>
+            <input type="password" id="service-key" placeholder="eyJ..." autocomplete="current-password" required />
+            <p class="form-hint">
+              Supabase → Settings → API → <strong>service_role</strong> secret
+            </p>
+          </div>
+          <p id="login-error" style="color:var(--danger);font-size:.875rem;margin-bottom:1rem;min-height:1.2em"></p>
+          <button type="submit" class="btn btn-primary">
+            <div class="spinner"></div>
+            <span class="btn-label">Entrar</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Layout principal ───────────────────────────────────── -->
+  <div class="admin-layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">🎁 Sorteador</div>
+      <a href="#section-stats"  class="active">📊 Dashboard</a>
+      <a href="#section-config">⚙️ Configuração</a>
+      <a href="#section-winners">🏆 Ganhadores</a>
+      <a href="index.html" target="_blank" style="margin-top:auto">↗ Ver sorteio</a>
+    </nav>
+
+    <!-- Main -->
+    <main class="admin-main">
+
+      <div class="admin-topbar">
+        <h2 id="topbar-title">Dashboard</h2>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span id="topbar-event-name" style="font-size:.85rem;color:var(--neutral-400)"></span>
+          <button class="btn btn-secondary btn-sm" id="btn-logout">Sair</button>
+        </div>
+      </div>
+
+      <div class="admin-content">
+
+        <!-- ── Dashboard ──────────────────────────────────────── -->
+        <section id="section-stats" style="margin-bottom:2.5rem">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--neutral-600)">
+            RESUMO DO EVENTO
+          </h3>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Brindes restantes</div>
+              <div class="stat-value" id="stat-remaining">—</div>
+              <div class="stat-sub" id="stat-sub-remaining"></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total de brindes</div>
+              <div class="stat-value" id="stat-total">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Distribuídos</div>
+              <div class="stat-value" id="stat-claimed">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Acessos totais</div>
+              <div class="stat-value" id="stat-accesses">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Taxa (últ. 30 min)</div>
+              <div class="stat-value" id="stat-rate">—</div>
+            </div>
+          </div>
+
+          <!-- Barra de progresso -->
+          <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem">
+            <div style="display:flex;justify-content:space-between;margin-bottom:.75rem">
+              <span style="font-size:.875rem;font-weight:600">Progresso de distribuição</span>
+              <span id="progress-pct" style="font-size:.875rem;color:var(--neutral-400)">0%</span>
+            </div>
+            <div style="height:10px;background:var(--neutral-100);border-radius:999px;overflow:hidden">
+              <div id="progress-bar"
+                   style="height:100%;background:var(--brand);border-radius:999px;width:0%;transition:width .5s ease">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Configuração ───────────────────────────────────── -->
+        <section id="section-config" style="margin-bottom:2.5rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <h3 style="font-size:1rem;font-weight:700;color:var(--neutral-600)">CONFIGURAÇÃO DO EVENTO</h3>
+            <button class="btn btn-secondary btn-sm" id="btn-new-event">+ Novo evento</button>
+          </div>
+
+          <input type="hidden" id="current-config-id" />
+
+          <div class="card" style="box-shadow:var(--shadow)">
+            <form id="config-form">
+              <div class="form-group">
+                <label for="cfg-event-name">Nome do evento</label>
+                <input type="text" id="cfg-event-name" placeholder="Ex: Lançamento Produto X" required />
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                  <label for="cfg-total">Total de brindes</label>
+                  <input type="number" id="cfg-total" placeholder="Ex: 50" min="1" required />
+                </div>
+                <div class="form-group">
+                  <label for="cfg-remaining">Disponíveis agora</label>
+                  <input type="number" id="cfg-remaining" placeholder="Ex: 50" min="0" required />
+                  <p class="form-hint">Use para corrigir manualmente se necessário.</p>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                  <label for="cfg-start">Início do sorteio</label>
+                  <input type="datetime-local" id="cfg-start" required />
+                </div>
+                <div class="form-group">
+                  <label for="cfg-end">Fim do sorteio</label>
+                  <input type="datetime-local" id="cfg-end" required />
+                </div>
+              </div>
+
+              <div id="config-notice" class="alert" style="display:none;margin-bottom:1rem"></div>
+
+              <button type="submit" class="btn btn-primary" id="btn-save-config">
+                <div class="spinner"></div>
+                <span class="btn-label">💾 Salvar configuração</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- ── Ganhadores ─────────────────────────────────────── -->
+        <section id="section-winners">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <h3 style="font-size:1rem;font-weight:700;color:var(--neutral-600)">GANHADORES</h3>
+            <span style="font-size:.8rem;color:var(--neutral-400)">Atualiza automaticamente a cada 30s</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Contato</th>
+                  <th>Horário</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="winners-body"></tbody>
+            </table>
+            <div id="winners-empty"
+                 style="display:none;padding:2.5rem;text-align:center;color:var(--neutral-400);font-size:.9rem">
+              Nenhum brinde distribuído ainda.
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /admin-content -->
+    </main>
+  </div><!-- /admin-layout -->
+
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    // Smooth scroll para as seções ao clicar no menu
+    document.querySelectorAll(".sidebar a[href^='#']").forEach(a => {
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute("href"));
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelectorAll(".sidebar a").forEach(l => l.classList.remove("active"));
+        a.classList.add("active");
+      });
+    });
+  </script>
+
+</body>
+</html>

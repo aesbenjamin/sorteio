@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sorteio de Brindes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <canvas id="confetti-canvas" style="display:none"></canvas>
+
+  <div class="page-center">
+    <div class="container">
+      <div class="card">
+
+        <!-- Cabeçalho -->
+        <div class="card-header">
+          <span class="icon">🎁</span>
+          <h1 id="event-name">Sorteio de Brindes</h1>
+          <p id="event-subtitle">Tente a sorte e ganhe um brinde especial!</p>
+        </div>
+
+        <!-- ── Estado inicial ───────────────────────────────── -->
+        <div id="initial-view">
+          <div id="event-status-badge" style="text-align:center;margin-bottom:1.5rem;display:none">
+            <!-- badge dinâmico: ativo / não iniciado / encerrado -->
+          </div>
+
+          <button class="btn btn-primary" id="btn-try">
+            <div class="spinner"></div>
+            <span class="btn-label">✨ Tentar a sorte</span>
+          </button>
+
+          <div id="prizes-info" style="text-align:center;margin-top:1rem;font-size:.85rem;color:var(--neutral-400);display:none">
+            <!-- Ex: "42 brindes disponíveis até 18h" -->
+          </div>
+        </div>
+
+        <!-- ── Resultado: GANHOU ────────────────────────────── -->
+        <div id="result-win" style="display:none">
+          <div class="result result-win visible">
+            <div class="result-icon">🎉</div>
+            <div>
+              <div class="result-title">Parabéns!</div>
+              <p class="result-msg">
+                Você foi sorteado! Preencha seus dados abaixo para retirar o brinde
+                com o responsável do evento.
+              </p>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Formulário de retirada -->
+          <div id="winner-form">
+            <div class="form-group">
+              <label for="winner-name">Seu nome *</label>
+              <input type="text" id="winner-name" placeholder="Nome completo" autocomplete="name" />
+            </div>
+            <div class="form-group">
+              <label for="winner-contact">Contato (opcional)</label>
+              <input type="text" id="winner-contact" placeholder="E-mail ou telefone" autocomplete="email" />
+              <p class="form-hint">Para contato caso necessário.</p>
+            </div>
+            <button class="btn btn-success" id="btn-submit">
+              <div class="spinner"></div>
+              <span class="btn-label">✅ Confirmar retirada</span>
+            </button>
+          </div>
+
+          <!-- Confirmação após salvar -->
+          <div id="form-success" style="display:none">
+            <div class="alert alert-success">
+              🎊 Dados registrados! Apresente esta tela para o responsável e retire seu brinde.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Resultado: NÃO GANHOU ────────────────────────── -->
+        <div id="result-lose" style="display:none">
+          <div class="result result-lose visible">
+            <div class="result-icon">🍀</div>
+            <div>
+              <div class="result-title">Quase lá!</div>
+              <p class="result-msg" id="lose-msg">
+                Não foi dessa vez. Você pode tentar novamente!
+              </p>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <button class="btn btn-secondary" id="btn-try-again">
+            🔄 Tentar novamente
+          </button>
+        </div>
+
+        <!-- ── Erro / fora do período ───────────────────────── -->
+        <div id="result-error" style="display:none">
+          <div class="result result-lose visible">
+            <div class="result-icon">😔</div>
+            <div>
+              <div class="result-title">Ops!</div>
+              <p class="result-msg" id="error-msg">Algo deu errado.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /card -->
+    </div><!-- /container -->
+  </div><!-- /page-center -->
+
+  <script src="js/config.js"></script>
+  <script src="js/raffle.js"></script>
+  <script>
+    // Carrega nome e status do evento via REST API do Supabase (leitura pública)
+    (async () => {
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/config?active=eq.true&order=created_at.desc&limit=1`,
+          { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
+        );
+        const data = await res.json();
+        if (!data || !data[0]) return;
+
+        const cfg  = data[0];
+        const now  = new Date();
+        const start = new Date(cfg.start_time);
+        const end   = new Date(cfg.end_time);
+
+        document.getElementById("event-name").textContent = cfg.event_name;
+        document.title = cfg.event_name;
+
+        const badge   = document.getElementById("event-status-badge");
+        const info    = document.getElementById("prizes-info");
+        const btnEl   = document.getElementById("btn-try");
+        badge.style.display = "";
+
+        if (now < start) {
+          badge.innerHTML = `<span class="badge badge-warning">⏳ Começa em ${formatDate(start)}</span>`;
+          btnEl.disabled = true;
+        } else if (now > end) {
+          badge.innerHTML = `<span class="badge badge-neutral">🔒 Encerrado</span>`;
+          btnEl.disabled = true;
+        } else {
+          badge.innerHTML = `<span class="badge badge-success">🟢 Sorteio ativo</span>`;
+          info.textContent = `${cfg.prizes_remaining} brinde${cfg.prizes_remaining !== 1 ? "s" : ""} disponível${cfg.prizes_remaining !== 1 ? "is" : ""} · encerra ${formatDate(end)}`;
+          info.style.display = "";
+        }
+      } catch {
+        // falha silenciosa — o botão continua funcionando
+      }
+    })();
+
+    function formatDate(d) {
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+  </script>
+
+</body>
+</html>

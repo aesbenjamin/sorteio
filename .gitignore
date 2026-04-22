@@ -1,0 +1,11 @@
+# Dependências e builds locais
+node_modules/
+.env
+.env.local
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# macOS
+.DS_Store
