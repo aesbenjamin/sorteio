@@ -107,31 +107,49 @@ Deno.serve(async (req: Request) => {
 });
 
 // ----------------------------------------------------------------
-// Algoritmo de distribuição adaptativa
+// Algoritmo de distribuição adaptativa com janela rotativa de 5 min
+//
+// Fórmula:
+//   taxa_necessária  = prizes_remaining / minutos_restantes
+//   taxa_de_acesso   = acessos_últimos_5min / 5   (mín. 1 acesso = pessoa atual)
+//   P = taxa_necessária / taxa_de_acesso
+//
+// Comportamento:
+//   - Alta demanda nos últimos 5 min  → P cai  (muita gente competindo)
+//   - Baixa demanda nos últimos 5 min → P sobe (poucos concorrentes)
+//   - Poucos brindes + pouco tempo    → taxa_necessária alta → urgência
+//   - P sempre limitado a [0, 1]
 // ----------------------------------------------------------------
 async function calculateProbability(
   supabase: ReturnType<typeof createClient>,
-  config: { id: number; prizes_remaining: number; start_time: string },
+  config: { id: number; prizes_remaining: number },
   now: Date,
   endTime: Date,
 ): Promise<number> {
+  const WINDOW_MINUTES = 5;
+
+  // Minutos restantes até o fim do evento (mínimo 1 para evitar divisão por zero)
   const minutesRemaining = Math.max(1, (endTime.getTime() - now.getTime()) / 60_000);
 
-  // Taxa de acesso: contagem nos últimos 30 minutos
-  const windowStart = new Date(now.getTime() - 30 * 60_000).toISOString();
-  const { count: recentAccesses } = await supabase
+  // Contagem de acessos na janela rotativa de 5 minutos
+  const windowStart = new Date(now.getTime() - WINDOW_MINUTES * 60_000).toISOString();
+  const { count: recentCount } = await supabase
     .from("accesses")
     .select("*", { count: "exact", head: true })
     .eq("config_id", config.id)
     .gte("accessed_at", windowStart);
 
-  const accessesPerMinute = ((recentAccesses ?? 0) + 1) / 30;
-  const estimatedRemainingAccesses = Math.ceil(accessesPerMinute * minutesRemaining);
+  // A pessoa atual já foi inserida antes deste cálculo, então count >= 1
+  const accessesInWindow = Math.max(1, recentCount ?? 1);
 
-  // P = brindes_restantes / max(brindes_restantes, acessos_estimados_restantes)
-  // Garante que P nunca passe de 1 e sobe naturalmente quando o tempo está acabando
-  const probability = config.prizes_remaining /
-    Math.max(config.prizes_remaining, estimatedRemainingAccesses);
+  // Taxa de chegada atual (pessoas/minuto) baseada na janela de 5 min
+  const demandRate = accessesInWindow / WINDOW_MINUTES;
+
+  // Taxa necessária para distribuir todos os brindes restantes no tempo restante
+  const targetRate = config.prizes_remaining / minutesRemaining;
+
+  // P = quanto de cada "pessoa esperada" deve ganhar para atingir a meta
+  const probability = targetRate / demandRate;
 
   return Math.min(1, Math.max(0, probability));
 }
