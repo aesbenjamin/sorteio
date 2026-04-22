@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
 
     // 3. Modo bloqueado — retorna no_win silenciosamente (transparente ao usuário)
     if (config.mode === "blocked") {
-      return json({ status: "no_win", message: "Não foi dessa vez! Tente novamente." });
+      return json({ status: "no_win", message: "Não foi dessa vez!" });
     }
 
     // 4. Verifica se ainda há brindes
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!shouldWin) {
-      return json({ status: "no_win", message: "Não foi dessa vez! Tente novamente." });
+      return json({ status: "no_win", message: "Não foi dessa vez!" });
     }
 
     // 7. Tenta decrementar atomicamente via RPC (evita race condition)

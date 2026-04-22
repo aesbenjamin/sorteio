@@ -76,7 +76,7 @@
       case "no_win":
         showView(resultLose);
         document.getElementById("lose-msg").textContent =
-          "Não foi dessa vez! Tente novamente mais tarde.";
+          "Não foi dessa vez, mas você participou e está concorrendo ao prêmio final";
         break;
 
       case "no_prizes":
