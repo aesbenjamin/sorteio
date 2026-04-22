@@ -67,6 +67,7 @@
   async function init() {
     await Promise.all([loadStats(), loadConfig()]);
     setupConfigForm();
+    setupModeControl();
     setupRefresh();
   }
 
@@ -120,6 +121,65 @@
     }
   }
 
+  // ── Controle de modo ─────────────────────────────────────────
+  function setupModeControl() {
+    document.querySelectorAll(".btn-mode").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const mode   = btn.dataset.mode;
+        const id     = document.getElementById("current-config-id").value;
+        const notice = document.getElementById("mode-notice");
+
+        if (!id) {
+          showModeNotice("Salve uma configuração de evento primeiro.", "var(--danger)");
+          return;
+        }
+
+        document.querySelectorAll(".btn-mode").forEach(b => b.disabled = true);
+
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/config?id=eq.${id}`,
+            { method: "PATCH", headers: getHeaders(), body: JSON.stringify({ mode }) }
+          );
+
+          if (!res.ok) throw new Error(await res.text());
+
+          renderModeButtons(mode);
+          const labels = { normal: "Algoritmo automático", force_win: "Forçar premiação", blocked: "Bloqueado" };
+          showModeNotice(`Modo alterado para: ${labels[mode]}`, "var(--success)");
+        } catch (err) {
+          showModeNotice("Erro ao alterar modo: " + err.message, "var(--danger)");
+        } finally {
+          document.querySelectorAll(".btn-mode").forEach(b => b.disabled = false);
+        }
+      });
+    });
+  }
+
+  function renderModeButtons(mode) {
+    const labels = {
+      normal:    "🤖 Algoritmo automático",
+      force_win: "🎯 Forçando premiação",
+      blocked:   "🔇 Sorteio bloqueado",
+    };
+    const el = document.getElementById("mode-label");
+    if (el) el.textContent = labels[mode] ?? mode;
+
+    document.querySelectorAll(".btn-mode").forEach(btn => {
+      btn.classList.remove("active-normal", "active-force_win", "active-blocked");
+      if (btn.dataset.mode === mode) btn.classList.add(`active-${mode}`);
+    });
+  }
+
+  function showModeNotice(msg, color) {
+    const el = document.getElementById("mode-notice");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = color;
+    el.style.display = "";
+    setTimeout(() => { el.style.display = "none"; }, 3500);
+  }
+
   // ── Config form ───────────────────────────────────────────────
   async function loadConfig() {
     try {
@@ -138,6 +198,7 @@
       setVal("cfg-end",         toDatetimeLocal(cfg.end_time));
 
       document.getElementById("current-config-id").value = cfg.id;
+      renderModeButtons(cfg.mode ?? "normal");
     } catch (err) {
       console.error("Erro ao carregar config:", err);
     }

@@ -50,25 +50,31 @@ Deno.serve(async (req: Request) => {
       return json({ status: "ended", message: "O período do sorteio encerrou." });
     }
 
-    // 3. Verifica se ainda há brindes
+    // 3. Modo bloqueado — retorna no_win silenciosamente (transparente ao usuário)
+    if (config.mode === "blocked") {
+      return json({ status: "no_win", message: "Não foi dessa vez! Tente novamente." });
+    }
+
+    // 4. Verifica se ainda há brindes
     if (config.prizes_remaining <= 0) {
       return json({ status: "no_prizes", message: "Todos os brindes já foram sorteados!" });
     }
 
-    // 4. Registra o acesso para o algoritmo adaptativo
+    // 5. Registra o acesso para o algoritmo adaptativo (não registra em modo bloqueado)
     await supabase.from("accesses").insert({ config_id: config.id });
 
-    // 5. Calcula probabilidade adaptativa
-    const probability = await calculateProbability(supabase, config, now, endTime);
+    // 6. Decide se sorteia: força ganho ou usa algoritmo adaptativo
+    let shouldWin: boolean;
+    if (config.mode === "force_win") {
+      shouldWin = true;
+    } else {
+      const probability = await calculateProbability(supabase, config, now, endTime);
+      const roll = Math.random();
+      shouldWin = roll < probability;
+    }
 
-    // 6. Sorteio
-    const roll = Math.random();
-    if (roll >= probability) {
-      return json({
-        status: "no_win",
-        message: "Não foi dessa vez! Tente novamente.",
-        debug: { probability: probability.toFixed(4), roll: roll.toFixed(4) },
-      });
+    if (!shouldWin) {
+      return json({ status: "no_win", message: "Não foi dessa vez! Tente novamente." });
     }
 
     // 7. Tenta decrementar atomicamente via RPC (evita race condition)

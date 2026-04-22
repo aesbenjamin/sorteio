@@ -435,6 +435,48 @@ tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: var(--neutral-50); }
 
 /* ============================================================
+   Mode buttons
+   ============================================================ */
+.btn-mode {
+  background: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 1rem .75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  line-height: 1;
+}
+
+.btn-mode:hover:not(:disabled) {
+  background: var(--neutral-200);
+}
+
+.btn-mode.active-normal {
+  background: var(--brand-light);
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+
+.btn-mode.active-force_win {
+  background: var(--warning-light);
+  border-color: var(--warning);
+  color: #92400e;
+}
+
+.btn-mode.active-blocked {
+  background: var(--danger-light);
+  border-color: var(--danger);
+  color: #991b1b;
+}
+
+/* ============================================================
    Login overlay
    ============================================================ */
 #login-overlay {

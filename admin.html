@@ -106,6 +106,34 @@
           </div>
         </section>
 
+        <!-- ── Controle do sorteio ───────────────────────────────── -->
+        <section id="section-mode" style="margin-bottom:2.5rem">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--neutral-600)">CONTROLE DO SORTEIO</h3>
+
+          <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem">
+            <p style="font-size:.875rem;color:var(--neutral-600);margin-bottom:1.25rem">
+              Modo atual: <strong id="mode-label">—</strong>
+            </p>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+              <button class="btn btn-mode" id="btn-mode-normal" data-mode="normal">
+                🤖<br/>
+                <span style="font-size:.8rem;margin-top:.3rem;display:block">Algoritmo automático</span>
+              </button>
+              <button class="btn btn-mode" id="btn-mode-force" data-mode="force_win">
+                🎯<br/>
+                <span style="font-size:.8rem;margin-top:.3rem;display:block">Forçar premiação</span>
+              </button>
+              <button class="btn btn-mode" id="btn-mode-blocked" data-mode="blocked">
+                🔇<br/>
+                <span style="font-size:.8rem;margin-top:.3rem;display:block">Bloquear sorteio</span>
+              </button>
+            </div>
+
+            <p id="mode-notice" style="display:none;font-size:.8rem;margin-top:1rem"></p>
+          </div>
+        </section>
+
         <!-- ── Configuração ───────────────────────────────────── -->
         <section id="section-config" style="margin-bottom:2.5rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
