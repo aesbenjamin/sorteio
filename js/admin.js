@@ -191,11 +191,16 @@
       const cfg  = cfgs?.[0];
       if (!cfg) return;
 
-      setVal("cfg-event-name",  cfg.event_name);
-      setVal("cfg-total",       cfg.total_prizes);
-      setVal("cfg-remaining",   cfg.prizes_remaining);
-      setVal("cfg-start",       toDatetimeLocal(cfg.start_time));
-      setVal("cfg-end",         toDatetimeLocal(cfg.end_time));
+      setVal("cfg-event-name",      cfg.event_name);
+      setVal("cfg-total",           cfg.total_prizes);
+      setVal("cfg-remaining",       cfg.prizes_remaining);
+      setVal("cfg-start",           toDatetimeLocal(cfg.start_time));
+      setVal("cfg-end",             toDatetimeLocal(cfg.end_time));
+      setVal("cfg-cooldown-minutes", cfg.cooldown_minutes ?? 60);
+
+      const chk = document.getElementById("cfg-cooldown-enabled");
+      if (chk) chk.checked = cfg.cooldown_enabled !== false;
+      toggleCooldownMinutes(cfg.cooldown_enabled !== false);
 
       document.getElementById("current-config-id").value = cfg.id;
       renderModeButtons(cfg.mode ?? "normal");
@@ -212,14 +217,17 @@
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const id = document.getElementById("current-config-id").value;
+      const id  = document.getElementById("current-config-id").value;
+      const chk = document.getElementById("cfg-cooldown-enabled");
       const payload = {
-        event_name:       getVal("cfg-event-name"),
-        total_prizes:     parseInt(getVal("cfg-total")),
-        prizes_remaining: parseInt(getVal("cfg-remaining")),
-        start_time:       new Date(getVal("cfg-start")).toISOString(),
-        end_time:         new Date(getVal("cfg-end")).toISOString(),
-        active:           true,
+        event_name:        getVal("cfg-event-name"),
+        total_prizes:      parseInt(getVal("cfg-total")),
+        prizes_remaining:  parseInt(getVal("cfg-remaining")),
+        start_time:        new Date(getVal("cfg-start")).toISOString(),
+        end_time:          new Date(getVal("cfg-end")).toISOString(),
+        active:            true,
+        cooldown_enabled:  chk ? chk.checked : true,
+        cooldown_minutes:  parseInt(getVal("cfg-cooldown-minutes")) || 60,
       };
 
       if (isNaN(payload.total_prizes) || isNaN(payload.prizes_remaining)) {
@@ -262,17 +270,28 @@
       }
     });
 
+    // Toggle de trava — mostra/esconde campo de minutos
+    const chkCooldown = document.getElementById("cfg-cooldown-enabled");
+    chkCooldown?.addEventListener("change", () => toggleCooldownMinutes(chkCooldown.checked));
+
     // Botão novo evento
     document.getElementById("btn-new-event")?.addEventListener("click", () => {
       document.getElementById("current-config-id").value = "";
-      setVal("cfg-event-name",  "");
-      setVal("cfg-total",       "");
-      setVal("cfg-remaining",   "");
-      setVal("cfg-start",       "");
-      setVal("cfg-end",         "");
+      setVal("cfg-event-name",       "");
+      setVal("cfg-total",            "");
+      setVal("cfg-remaining",        "");
+      setVal("cfg-start",            "");
+      setVal("cfg-end",              "");
+      setVal("cfg-cooldown-minutes", "60");
+      if (chkCooldown) { chkCooldown.checked = true; toggleCooldownMinutes(true); }
       notice.style.display = "none";
       document.getElementById("cfg-event-name").focus();
     });
+  }
+
+  function toggleCooldownMinutes(enabled) {
+    const wrap = document.getElementById("cooldown-minutes-wrap");
+    if (wrap) wrap.style.display = enabled ? "" : "none";
   }
 
   // ── Auto-refresh a cada 30s ───────────────────────────────────

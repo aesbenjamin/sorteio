@@ -1,31 +1,41 @@
 // ============================================================
 // Lógica da página de sorteio
+// Inicialização via window.initRaffle(cfg) chamado pelo index.html
+// após o fetch da configuração do evento.
 // ============================================================
 (function () {
   "use strict";
 
   const COOLDOWN_KEY = "sorteador_cooldown";
 
+  // Parâmetros de cooldown — preenchidos por initRaffle()
+  let cooldownEnabled = true;
+  let cooldownMinutes = 60;
+
   // ── DOM refs ────────────────────────────────────────────────
-  const btnTry          = document.getElementById("btn-try");
-  const btnTryAgain     = document.getElementById("btn-try-again");
-  const initialView     = document.getElementById("initial-view");
-  const resultWin       = document.getElementById("result-win");
-  const resultLose      = document.getElementById("result-lose");
-  const resultError     = document.getElementById("result-error");
-  const errorMsg        = document.getElementById("error-msg");
-  const cooldownNotice  = document.getElementById("cooldown-notice");
-  const cooldownMsgEl   = document.getElementById("cooldown-msg");
-  const confettiCanvas  = document.getElementById("confetti-canvas");
+  const btnTry         = document.getElementById("btn-try");
+  const btnTryAgain    = document.getElementById("btn-try-again");
+  const initialView    = document.getElementById("initial-view");
+  const resultWin      = document.getElementById("result-win");
+  const resultLose     = document.getElementById("result-lose");
+  const resultError    = document.getElementById("result-error");
+  const errorMsg       = document.getElementById("error-msg");
+  const cooldownNotice = document.getElementById("cooldown-notice");
+  const cooldownMsgEl  = document.getElementById("cooldown-msg");
+  const confettiCanvas = document.getElementById("confetti-canvas");
 
   let cooldownTimer = null;
 
-  // ── Verifica cooldown ao carregar ───────────────────────────
-  checkCooldown();
+  // ── Ponto de entrada chamado pelo inline script do index.html ─
+  window.initRaffle = function (cfg) {
+    cooldownEnabled = cfg.cooldown_enabled !== false; // default true
+    cooldownMinutes = cfg.cooldown_minutes  >  0 ? cfg.cooldown_minutes : 60;
+    checkCooldown();
+  };
 
   // ── Tentar o sorteio ────────────────────────────────────────
   btnTry?.addEventListener("click", async () => {
-    if (isOnCooldown()) return;
+    if (cooldownEnabled && isOnCooldown()) return;
 
     setLoading(btnTry, true);
 
@@ -42,7 +52,7 @@
       const data = await res.json();
 
       // Grava cooldown após qualquer tentativa válida (ganhou ou não)
-      if (["win", "no_win", "no_prizes"].includes(data.status)) {
+      if (cooldownEnabled && ["win", "no_win", "no_prizes"].includes(data.status)) {
         setCooldown();
       }
 
@@ -105,20 +115,20 @@
 
   // ── Cooldown ─────────────────────────────────────────────────
   function setCooldown() {
-    try { localStorage.setItem(COOLDOWN_KEY, Date.now().toString()); } catch { /* privado */ }
+    try { localStorage.setItem(COOLDOWN_KEY, Date.now().toString()); } catch { /* modo privado */ }
   }
 
   function isOnCooldown() {
     try {
       const ts = parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
-      return Date.now() - ts < COOLDOWN_MINUTES * 60_000;
+      return Date.now() - ts < cooldownMinutes * 60_000;
     } catch { return false; }
   }
 
   function checkCooldown() {
     clearInterval(cooldownTimer);
 
-    if (!isOnCooldown()) {
+    if (!cooldownEnabled || !isOnCooldown()) {
       if (cooldownNotice) cooldownNotice.style.display = "none";
       if (btnTry) btnTry.disabled = false;
       return;
@@ -137,9 +147,7 @@
   }
 
   function updateCooldownDisplay() {
-    if (cooldownMsgEl) {
-      cooldownMsgEl.textContent = "Você já participou do sorteio.";
-    }
+    if (cooldownMsgEl) cooldownMsgEl.textContent = "Você já participou do sorteio.";
     if (cooldownNotice) cooldownNotice.style.display = "";
     if (btnTry) btnTry.disabled = true;
   }

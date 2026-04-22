@@ -173,6 +173,27 @@
                 </div>
               </div>
 
+              <hr style="border:none;border-top:1.5px solid var(--neutral-100);margin:1.25rem 0" />
+
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                <div>
+                  <label style="margin-bottom:0;cursor:pointer" for="cfg-cooldown-enabled">
+                    Trava por dispositivo
+                  </label>
+                  <p class="form-hint" style="margin-top:.2rem">Impede que o mesmo aparelho participe várias vezes.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="cfg-cooldown-enabled" checked />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div id="cooldown-minutes-wrap" class="form-group">
+                <label for="cfg-cooldown-minutes">Duração da trava (minutos)</label>
+                <input type="number" id="cfg-cooldown-minutes" placeholder="Ex: 60" min="1" value="60" />
+                <p class="form-hint">Tempo que o dispositivo deve aguardar antes de poder tentar novamente.</p>
+              </div>
+
               <div id="config-notice" class="alert" style="display:none;margin-bottom:1rem"></div>
 
               <button type="submit" class="btn btn-primary" id="btn-save-config">

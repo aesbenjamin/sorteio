@@ -100,42 +100,49 @@
   <script src="js/config.js"></script>
   <script src="js/raffle.js"></script>
   <script>
-    // Carrega nome e status do evento via REST API do Supabase (leitura pública)
+    // Carrega configuração do evento e inicializa o sorteio
     (async () => {
+      let cfg = null;
+
       try {
         const res = await fetch(
           `${SUPABASE_URL}/rest/v1/config?active=eq.true&order=created_at.desc&limit=1`,
           { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
         );
         const data = await res.json();
-        if (!data || !data[0]) return;
+        if (data && data[0]) cfg = data[0];
+      } catch { /* falha silenciosa */ }
 
-        const cfg  = data[0];
-        const now  = new Date();
-        const start = new Date(cfg.start_time);
-        const end   = new Date(cfg.end_time);
+      // Inicializa cooldown com valores do banco (ou defaults seguros)
+      window.initRaffle({
+        cooldown_enabled: cfg ? cfg.cooldown_enabled : true,
+        cooldown_minutes: cfg ? cfg.cooldown_minutes : 60,
+      });
 
-        document.getElementById("event-name").textContent = cfg.event_name;
-        document.title = cfg.event_name;
+      if (!cfg) return;
 
-        const badge   = document.getElementById("event-status-badge");
-        const info    = document.getElementById("prizes-info");
-        const btnEl   = document.getElementById("btn-try");
-        badge.style.display = "";
+      const now   = new Date();
+      const start = new Date(cfg.start_time);
+      const end   = new Date(cfg.end_time);
 
-        if (now < start) {
-          badge.innerHTML = `<span class="badge badge-warning">⏳ Começa em ${formatDate(start)}</span>`;
-          btnEl.disabled = true;
-        } else if (now > end) {
-          badge.innerHTML = `<span class="badge badge-neutral">🔒 Encerrado</span>`;
-          btnEl.disabled = true;
-        } else {
-          badge.innerHTML = `<span class="badge badge-success">🟢 Sorteio ativo</span>`;
-          info.textContent = `${cfg.prizes_remaining} brinde${cfg.prizes_remaining !== 1 ? "s" : ""} disponível${cfg.prizes_remaining !== 1 ? "is" : ""} · encerra ${formatDate(end)}`;
-          info.style.display = "";
-        }
-      } catch {
-        // falha silenciosa — o botão continua funcionando
+      document.getElementById("event-name").textContent = cfg.event_name;
+      document.title = cfg.event_name;
+
+      const badge = document.getElementById("event-status-badge");
+      const info  = document.getElementById("prizes-info");
+      const btnEl = document.getElementById("btn-try");
+      badge.style.display = "";
+
+      if (now < start) {
+        badge.innerHTML = `<span class="badge badge-warning">⏳ Começa em ${formatDate(start)}</span>`;
+        btnEl.disabled = true;
+      } else if (now > end) {
+        badge.innerHTML = `<span class="badge badge-neutral">🔒 Encerrado</span>`;
+        btnEl.disabled = true;
+      } else {
+        badge.innerHTML = `<span class="badge badge-success">🟢 Sorteio ativo</span>`;
+        info.textContent = `${cfg.prizes_remaining} brinde${cfg.prizes_remaining !== 1 ? "s" : ""} disponível${cfg.prizes_remaining !== 1 ? "is" : ""} · encerra ${formatDate(end)}`;
+        info.style.display = "";
       }
     })();
 
