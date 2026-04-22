@@ -184,7 +184,7 @@
   async function loadConfig() {
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/config?order=created_at.desc&limit=1`,
+        `${SUPABASE_URL}/rest/v1/config?active=eq.true&order=created_at.desc&limit=1`,
         { headers: getHeaders() }
       );
       const cfgs = await res.json();

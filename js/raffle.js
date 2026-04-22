@@ -28,8 +28,9 @@
 
   // ── Ponto de entrada chamado pelo inline script do index.html ─
   window.initRaffle = function (cfg) {
-    cooldownEnabled = cfg.cooldown_enabled !== false; // default true
-    cooldownMinutes = cfg.cooldown_minutes  >  0 ? cfg.cooldown_minutes : 60;
+    // Trata explicitamente: só ativa se for literalmente true (ou undefined/null = default ativo)
+    cooldownEnabled = cfg.cooldown_enabled === true || cfg.cooldown_enabled == null;
+    cooldownMinutes = (cfg.cooldown_minutes > 0) ? cfg.cooldown_minutes : 60;
     checkCooldown();
   };
 
