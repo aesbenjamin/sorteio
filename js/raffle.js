@@ -115,13 +115,6 @@
     } catch { return false; }
   }
 
-  function getRemainingMs() {
-    try {
-      const ts = parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
-      return Math.max(0, COOLDOWN_MINUTES * 60_000 - (Date.now() - ts));
-    } catch { return 0; }
-  }
-
   function checkCooldown() {
     clearInterval(cooldownTimer);
 
@@ -144,11 +137,8 @@
   }
 
   function updateCooldownDisplay() {
-    const remaining = getRemainingMs();
-    const mins = Math.ceil(remaining / 60_000);
     if (cooldownMsgEl) {
-      cooldownMsgEl.textContent =
-        `Você já participou. Tente novamente em ${mins} minuto${mins !== 1 ? "s" : ""}.`;
+      cooldownMsgEl.textContent = "Você já participou do sorteio.";
     }
     if (cooldownNotice) cooldownNotice.style.display = "";
     if (btnTry) btnTry.disabled = true;
